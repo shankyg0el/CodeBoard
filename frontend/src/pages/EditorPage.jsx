@@ -6,15 +6,16 @@ import Navbar from "../Components/Navbar";
 import CodeMirror from "@uiw/react-codemirror";
 import * as themes from "@uiw/codemirror-themes-all";
 import { loadLanguage } from "@uiw/codemirror-extensions-langs";
-
 import { color } from "@uiw/codemirror-extensions-color";
 import { hyperLink } from "@uiw/codemirror-extensions-hyper-link";
 import { initSocket } from "../socket";
 import ACTIONS from "../Actions";
+import Canvas from "../Components/Canvas";
 
 function EditorPage() {
   const socketRef = useRef(null);
   const settingsContext = useContext(SettingsContext);
+  const [showCanvas, setShowCanvas] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
   const { roomId } = useParams();
@@ -23,7 +24,6 @@ function EditorPage() {
   const [messages, setMessages] = useState([]);
   const handleEditorChange = (value) => {
     socketRef.current.emit(ACTIONS.CODE_CHANGE, { roomId, code: value });
-    codeRef.current = value;
     setEditorContent(value);
   };
 
@@ -110,22 +110,39 @@ function EditorPage() {
     };
   }, []);
 
+  function handleCanvasClick(icon) {
+    if (icon === "canvas") {
+      setShowCanvas(true);
+    } else {
+      setShowCanvas(false);
+    }
+  }
+
   return (
     <div className="flex">
-      <Navbar clients={clients} socketRef={socketRef} messages={messages} />
-      <CodeMirror
-        value={editorContent}
-        onChange={handleEditorChange}
-        extensions={[
-          loadLanguage(settingsContext.settings.language),
-          color,
-          hyperLink,
-        ]}
-        theme={themes[settingsContext.settings.theme]}
-        width="100vw"
-        height="100vh"
-        style={{ fontSize: "20px" }}
+      <Navbar
+        clients={clients}
+        socketRef={socketRef}
+        messages={messages}
+        handleCanvasClick={handleCanvasClick}
       />
+      {showCanvas == true ? (
+        <Canvas />
+      ) : (
+        <CodeMirror
+          value={editorContent}
+          onChange={handleEditorChange}
+          extensions={[
+            loadLanguage(settingsContext.settings.language),
+            color,
+            hyperLink,
+          ]}
+          theme={themes[settingsContext.settings.theme]}
+          width="100vw"
+          height="100vh"
+          style={{ fontSize: "20px" }}
+        />
+      )}
     </div>
   );
 }

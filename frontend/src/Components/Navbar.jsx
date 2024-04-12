@@ -1,14 +1,21 @@
 import { MdOutlineChat } from "react-icons/md";
 import { LiaUserFriendsSolid } from "react-icons/lia";
 import { IoSettingsOutline } from "react-icons/io5";
+import { LuPencilLine } from "react-icons/lu";
+import { FaCode } from "react-icons/fa";
 import { useEffect, useRef, useState } from "react";
 import ViewMembers from "./ViewMembers";
 import Chat from "./Chat";
 import Settings from "./Settings";
-function Navbar({ socketRef, messages }) {
+function Navbar({ socketRef, messages, handleCanvasClick }) {
   const [sideBarWidth, setSideBarWidth] = useState(300);
   const [showSidebar, setShowSidebar] = useState(false);
-  const [lastClickedIcon, setLastClickedIcon] = useState("");
+  const [lastClickedIcon, setLastClickedIcon] = useState("code");
+
+  function handleCodeOrCanvasClick(icon) {
+    setLastClickedIcon(icon);
+    handleCanvasClick(icon);
+  }
 
   function handleViewMembersClick(icon) {
     if (showSidebar && lastClickedIcon === icon) {
@@ -42,6 +49,19 @@ function Navbar({ socketRef, messages }) {
   return (
     <div className="flex">
       <div className=" fixed bottom-0 left-0 z-50 flex items-center h-[50px] w-full gap-10 px-5 border-t border-[#89919d] bg-background  md:static md:h-screen md:w-[50px] md:min-w-[50px] md:flex-col md:border-r md:border-t-0 md:p-2 md:pt-4 cursor-pointer text-[#89919d]">
+        <FaCode
+          className={`${
+            lastClickedIcon === "code" && "text-white scale-[2.2]"
+          } scale-[2] `}
+          onClick={() => handleCodeOrCanvasClick("code")}
+        />
+        <LuPencilLine
+          className={`${
+            lastClickedIcon === "canvas" && "text-white scale-[2.2]"
+          } scale-[2] `}
+          onClick={() => handleCodeOrCanvasClick("canvas")}
+        />
+
         <LiaUserFriendsSolid
           className={`${
             lastClickedIcon === "viewmembers" && "text-white scale-[2.2]"

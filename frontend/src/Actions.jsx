@@ -7,4 +7,18 @@ const ACTIONS = {
   MESSAGE: "message",
 };
 
+const CanvasActions = {
+  SELECT: "SELECT",
+  RECTANGLE: "RECTANGLE",
+  CIRCLE: "CIRCLE",
+  LINE: "LINE",
+  SCRIBBLE: "SCRIBBLE",
+  TEXT: "TEXT",
+  ERASE: "ERASE",
+  CLEAR: "CLEAR",
+  ARROW: "ARROW",
+};
+
+export { CanvasActions };
+
 export default ACTIONS;
