@@ -1,8 +1,8 @@
 const express = require("express");
 const { Server } = require("socket.io");
 const http = require("http");
-const ACTIONS = require("./ACTIONS.JS");
-const { timeStamp } = require("console");
+const { ACTIONS } = require("./ACTIONS.JS");
+const { CANVASACTIONS } = require("./ACTIONS.JS");
 
 const app = express();
 const server = http.createServer(app);
@@ -74,6 +74,61 @@ io.on("connection", (socket) => {
         id: Date.now(),
         username: userSockerMap[socket.id],
         timestamp: generateTimeStamp(),
+      });
+    });
+  });
+
+  socket.on(CANVASACTIONS.RECTANGLE, ({ roomId, rectangles, action }) => {
+    const clients = getAllConnectedClients(roomId);
+    clients.forEach(({ socketId }) => {
+      io.to(socketId).emit(CANVASACTIONS.RECTANGLE, {
+        rectangles,
+        action,
+      });
+    });
+  });
+  socket.on(CANVASACTIONS.CIRCLE, ({ roomId, circles, action }) => {
+    const clients = getAllConnectedClients(roomId);
+    clients.forEach(({ socketId }) => {
+      io.to(socketId).emit(CANVASACTIONS.CIRCLE, {
+        circles,
+        action,
+      });
+    });
+  });
+  socket.on(CANVASACTIONS.ARROW, ({ roomId, arrows, action }) => {
+    const clients = getAllConnectedClients(roomId);
+    clients.forEach(({ socketId }) => {
+      io.to(socketId).emit(CANVASACTIONS.ARROW, {
+        arrows,
+        action,
+      });
+    });
+  });
+  socket.on(CANVASACTIONS.SCRIBBLE, ({ roomId, scribbles, action }) => {
+    const clients = getAllConnectedClients(roomId);
+    clients.forEach(({ socketId }) => {
+      io.to(socketId).emit(CANVASACTIONS.SCRIBBLE, {
+        scribbles,
+        action,
+      });
+    });
+  });
+  socket.on(CANVASACTIONS.TEXT, ({ roomId, texts, action }) => {
+    const clients = getAllConnectedClients(roomId);
+    clients.forEach(({ socketId }) => {
+      io.to(socketId).emit(CANVASACTIONS.TEXT, {
+        texts,
+        action,
+      });
+    });
+  });
+  socket.on(CANVASACTIONS.ERASE, ({ roomId, shapeId, action }) => {
+    const clients = getAllConnectedClients(roomId);
+    clients.forEach(({ socketId }) => {
+      io.to(socketId).emit(CANVASACTIONS.ERASE, {
+        shapeId,
+        action,
       });
     });
   });

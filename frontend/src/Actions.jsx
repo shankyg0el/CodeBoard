@@ -7,7 +7,7 @@ const ACTIONS = {
   MESSAGE: "message",
 };
 
-const CanvasActions = {
+const CANVASACTIONS = {
   SELECT: "SELECT",
   RECTANGLE: "RECTANGLE",
   CIRCLE: "CIRCLE",
@@ -19,6 +19,6 @@ const CanvasActions = {
   ARROW: "ARROW",
 };
 
-export { CanvasActions };
+export { CANVASACTIONS };
 
 export default ACTIONS;

@@ -6,5 +6,15 @@ const ACTIONS = {
   SYNC_CODE: "sync-code",
   MESSAGE: "message",
 };
-
-module.exports = ACTIONS;
+const CANVASACTIONS = {
+  SELECT: "SELECT",
+  RECTANGLE: "RECTANGLE",
+  CIRCLE: "CIRCLE",
+  LINE: "LINE",
+  SCRIBBLE: "SCRIBBLE",
+  TEXT: "TEXT",
+  ERASE: "ERASE",
+  CLEAR: "CLEAR",
+  ARROW: "ARROW",
+};
+module.exports = { ACTIONS, CANVASACTIONS };

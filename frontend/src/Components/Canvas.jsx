@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { v4 as uuid } from "uuid";
 import {
   Stage,
@@ -8,10 +8,9 @@ import {
   Arrow,
   Line,
   Text,
-  Image,
   Transformer,
 } from "react-konva";
-import ACTIONS, { CanvasActions } from "../Actions";
+import { CANVASACTIONS } from "../Actions";
 import { RiCursorFill } from "react-icons/ri";
 import { MdOutlineRectangle } from "react-icons/md";
 import { MdOutlineFileDownload } from "react-icons/md";
@@ -20,13 +19,26 @@ import { CiText } from "react-icons/ci";
 import { FaArrowRight, FaRegCircle } from "react-icons/fa";
 import { LuEraser } from "react-icons/lu";
 
-function Canvas() {
+function Canvas({
+  socketRef,
+  roomId,
+  actionPerformed,
+  newRectangles,
+  newCircles,
+  newArrows,
+  newScribbles,
+  newTexts,
+  newLayerContent,
+  shapeId,
+}) {
   const canvasRef = useRef(null);
+  const layerRef = useRef(null);
+  const rectRef = useRef(null);
   const isDrawing = useRef(null);
   const currentShapeId = useRef(null);
   const eraseShapeId = useRef(null);
   const transformerRef = useRef(null);
-  const [action, setAction] = useState(CanvasActions.SELECT);
+  const [action, setAction] = useState(CANVASACTIONS.SELECT);
   const [fillColor, setFillColor] = useState("transparent");
   const [strokeColor, setStrokeColor] = useState("#ffffff");
   const [canvasText, setCanvasText] = useState("");
@@ -38,10 +50,36 @@ function Canvas() {
   const [scribbles, setScribbles] = useState([]);
   const [texts, setTexts] = useState([]);
 
-  const isDraggable = action === CanvasActions.SELECT;
+  const isDraggable = action === CANVASACTIONS.SELECT;
+
+  useEffect(() => {
+    switch (actionPerformed) {
+      case CANVASACTIONS.RECTANGLE:
+        setRectangles(newRectangles);
+        break;
+      case CANVASACTIONS.CIRCLE:
+        setCircles(newCircles);
+        break;
+      case CANVASACTIONS.ARROW:
+        setArrows(newArrows);
+        break;
+      case CANVASACTIONS.SCRIBBLE:
+        setScribbles(newScribbles);
+        break;
+      case CANVASACTIONS.TEXT:
+        setTexts(newTexts);
+        break;
+      case CANVASACTIONS.ERASE:
+        layerRef.current.children.forEach((element) => {
+          if (element._id === shapeId) {
+            element.destroy();
+          }
+        });
+    }
+  }, [newRectangles, newCircles, newArrows, newScribbles, newTexts, shapeId]);
 
   function handlePointerDown() {
-    if (action === CanvasActions.SELECT) return;
+    if (action === CANVASACTIONS.SELECT) return;
 
     const canvas = canvasRef.current;
     const { x, y } = canvas.getPointerPosition();
@@ -49,7 +87,7 @@ function Canvas() {
     currentShapeId.current = id;
     isDrawing.current = true;
     switch (action) {
-      case CanvasActions.RECTANGLE:
+      case CANVASACTIONS.RECTANGLE:
         setRectangles((rectangles) => [
           ...rectangles,
           {
@@ -63,7 +101,7 @@ function Canvas() {
           },
         ]);
         break;
-      case CanvasActions.CIRCLE:
+      case CANVASACTIONS.CIRCLE:
         setCircles((circles) => [
           ...circles,
           {
@@ -76,7 +114,7 @@ function Canvas() {
           },
         ]);
         break;
-      case CanvasActions.ARROW:
+      case CANVASACTIONS.ARROW:
         setArrows((arrows) => [
           ...arrows,
           {
@@ -87,7 +125,7 @@ function Canvas() {
           },
         ]);
         break;
-      case CanvasActions.SCRIBBLE:
+      case CANVASACTIONS.SCRIBBLE:
         setScribbles((scribbles) => [
           ...scribbles,
           {
@@ -97,7 +135,7 @@ function Canvas() {
           },
         ]);
         break;
-      case CanvasActions.TEXT:
+      case CANVASACTIONS.TEXT:
         canvasText.length > 0 &&
           setTexts((texts) => [
             ...texts,
@@ -113,13 +151,13 @@ function Canvas() {
     }
   }
   function handlePointerMove() {
-    if (action === CanvasActions.SELECT || !isDrawing.current) return;
+    if (action === CANVASACTIONS.SELECT || !isDrawing.current) return;
 
     const canvas = canvasRef.current;
     const { x, y } = canvas.getPointerPosition();
 
     switch (action) {
-      case CanvasActions.RECTANGLE:
+      case CANVASACTIONS.RECTANGLE:
         setRectangles((rectangles) =>
           rectangles.map((rectangle) => {
             if (rectangle.id === currentShapeId.current) {
@@ -133,7 +171,7 @@ function Canvas() {
           })
         );
         break;
-      case CanvasActions.CIRCLE:
+      case CANVASACTIONS.CIRCLE:
         setCircles((circles) =>
           circles.map((circle) => {
             if (circle.id === currentShapeId.current) {
@@ -146,10 +184,9 @@ function Canvas() {
           })
         );
         break;
-      case CanvasActions.ARROW:
+      case CANVASACTIONS.ARROW:
         setArrows((arrows) =>
           arrows.map((arrow) => {
-            console.log(arrow.id, currentShapeId.current);
             if (arrow.id === currentShapeId.current) {
               return {
                 ...arrow,
@@ -161,7 +198,7 @@ function Canvas() {
         );
         break;
 
-      case CanvasActions.SCRIBBLE:
+      case CANVASACTIONS.SCRIBBLE:
         setScribbles((scribbles) =>
           scribbles.map((scribble) => {
             if (scribble.id === currentShapeId.current) {
@@ -173,11 +210,47 @@ function Canvas() {
             return scribble;
           })
         );
-        break;
     }
   }
   function handlePointerUp() {
     isDrawing.current = false;
+    switch (action) {
+      case CANVASACTIONS.RECTANGLE:
+        socketRef.current.emit(CANVASACTIONS.RECTANGLE, {
+          rectangles,
+          roomId,
+          action: CANVASACTIONS.RECTANGLE,
+        });
+        break;
+      case CANVASACTIONS.CIRCLE:
+        socketRef.current.emit(CANVASACTIONS.CIRCLE, {
+          circles,
+          roomId,
+          action: CANVASACTIONS.CIRCLE,
+        });
+        break;
+      case CANVASACTIONS.ARROW:
+        socketRef.current.emit(CANVASACTIONS.ARROW, {
+          arrows,
+          roomId,
+          action: CANVASACTIONS.ARROW,
+        });
+        break;
+      case CANVASACTIONS.SCRIBBLE:
+        socketRef.current.emit(CANVASACTIONS.SCRIBBLE, {
+          scribbles,
+          roomId,
+          action: CANVASACTIONS.SCRIBBLE,
+        });
+        break;
+      case CANVASACTIONS.TEXT:
+        socketRef.current.emit(CANVASACTIONS.TEXT, {
+          texts,
+          roomId,
+          action: CANVASACTIONS.TEXT,
+        });
+        break;
+    }
   }
 
   function exportCanvasData() {
@@ -191,14 +264,21 @@ function Canvas() {
   }
 
   function handleShapeClick(e) {
-    if (action === CanvasActions.SELECT) {
+    const layer = layerRef.current;
+    if (action === CANVASACTIONS.SELECT) {
       const target = e.currentTarget;
       transformerRef.current.nodes([target]);
     }
 
-    if (action === CanvasActions.ERASE) {
+    if (action === CANVASACTIONS.ERASE) {
       const clickedShape = e.target;
       clickedShape.destroy();
+      socketRef.current.emit(CANVASACTIONS.ERASE, {
+        layerContent: layer,
+        shapeId: e.target._id,
+        roomId,
+        action: CANVASACTIONS.ERASE,
+      });
     }
   }
 
@@ -210,10 +290,10 @@ function Canvas() {
             <button
               onClick={() => {
                 setCursorType("cursor-default");
-                setAction(CanvasActions.SELECT);
+                setAction(CANVASACTIONS.SELECT);
               }}
               className={
-                action === CanvasActions.SELECT
+                action === CANVASACTIONS.SELECT
                   ? "bg-primary p-1 rounded"
                   : "p-1 hover:bg-secondary rounded"
               }
@@ -223,10 +303,10 @@ function Canvas() {
             <button
               onClick={() => {
                 setCursorType("cursor-crosshair");
-                setAction(CanvasActions.RECTANGLE);
+                setAction(CANVASACTIONS.RECTANGLE);
               }}
               className={
-                action === CanvasActions.RECTANGLE
+                action === CANVASACTIONS.RECTANGLE
                   ? "bg-primary p-1 rounded"
                   : "p-1 hover:bg-secondary rounded"
               }
@@ -236,10 +316,10 @@ function Canvas() {
             <button
               onClick={() => {
                 setCursorType("cursor-crosshair");
-                setAction(CanvasActions.CIRCLE);
+                setAction(CANVASACTIONS.CIRCLE);
               }}
               className={
-                action === CanvasActions.CIRCLE
+                action === CANVASACTIONS.CIRCLE
                   ? "bg-primary p-1 rounded"
                   : "p-1 hover:bg-secondary rounded"
               }
@@ -249,10 +329,10 @@ function Canvas() {
             <button
               onClick={() => {
                 setCursorType("cursor-crosshair");
-                setAction(CanvasActions.ARROW);
+                setAction(CANVASACTIONS.ARROW);
               }}
               className={
-                action === CanvasActions.ARROW
+                action === CANVASACTIONS.ARROW
                   ? "bg-primary p-1 rounded"
                   : "p-1 hover:bg-secondary rounded"
               }
@@ -262,10 +342,10 @@ function Canvas() {
             <button
               onClick={() => {
                 setCursorType("cursor-crosshair");
-                setAction(CanvasActions.SCRIBBLE);
+                setAction(CANVASACTIONS.SCRIBBLE);
               }}
               className={
-                action === CanvasActions.SCRIBBLE
+                action === CANVASACTIONS.SCRIBBLE
                   ? "bg-primary p-1 rounded"
                   : "p-1 hover:bg-secondary rounded"
               }
@@ -275,10 +355,10 @@ function Canvas() {
             <button
               onClick={() => {
                 setCursorType("cursor-text");
-                setAction(CanvasActions.TEXT);
+                setAction(CANVASACTIONS.TEXT);
               }}
               className={
-                action === CanvasActions.TEXT
+                action === CANVASACTIONS.TEXT
                   ? "bg-primary p-1 rounded"
                   : "p-1 hover:bg-secondary rounded"
               }
@@ -288,10 +368,10 @@ function Canvas() {
             <button
               onClick={() => {
                 setCursorType("cursor-cell");
-                setAction(CanvasActions.ERASE);
+                setAction(CANVASACTIONS.ERASE);
               }}
               className={
-                action === CanvasActions.ERASE
+                action === CANVASACTIONS.ERASE
                   ? "bg-primary p-1 rounded"
                   : "p-1 hover:bg-secondary rounded"
               }
@@ -314,7 +394,7 @@ function Canvas() {
               <MdOutlineFileDownload className="text-[28px]" />
             </button>
           </div>
-          {action === CanvasActions.TEXT && (
+          {action === CANVASACTIONS.TEXT && (
             <input
               className="w-full p-2 bg-transparent border rounded-l outline-0 "
               type="text"
@@ -334,7 +414,7 @@ function Canvas() {
         width={window.innerWidth}
         height={window.innerHeight}
       >
-        <Layer>
+        <Layer ref={layerRef}>
           <Rect
             x={0}
             y={0}
@@ -358,6 +438,7 @@ function Canvas() {
               width={rectangle.width}
               height={rectangle.height}
               draggable={isDraggable}
+              useRef={rectRef}
               onMouseEnter={(e) => {
                 eraseShapeId.current = e.target._id;
                 if (isDraggable) {
