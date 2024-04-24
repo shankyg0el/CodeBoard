@@ -37,11 +37,11 @@ function HomePage() {
         <img src="../../images/homePageImage.svg" />
       </div>
       <div>
-        <p className="text-3xl md:text-[40px] lg:text-[45px] text-center font-Workbench pb-2">
-          SyncSphere
+        <p className="text-3xl md:text-[45px] lg:text-[50px] text-center font-Workbench pb-2">
+          Codeboard
         </p>
-        <p className=" text-[17px] md:text-xl lg:text-2xl text-center">
-          Where Minds Sync and Creativity Flows!
+        <p className=" text-[15px] md:text-xl lg:text-[20px] text-center">
+          The collaborative coding & brainstorming platform.
         </p>
 
         <form onSubmit={handleFormSubmit} className="flex flex-col gap-4 pt-5">

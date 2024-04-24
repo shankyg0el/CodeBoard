@@ -78,57 +78,69 @@ io.on("connection", (socket) => {
     });
   });
 
-  socket.on(CANVASACTIONS.RECTANGLE, ({ roomId, rectangles, action }) => {
-    const clients = getAllConnectedClients(roomId);
-    clients.forEach(({ socketId }) => {
-      io.to(socketId).emit(CANVASACTIONS.RECTANGLE, {
-        rectangles,
-        action,
+  socket.on(
+    CANVASACTIONS.RECTANGLE,
+    ({ roomId, rectangles, action, username }) => {
+      const clients = getAllConnectedClients(roomId);
+      clients.forEach(({ socketId }) => {
+        io.to(socketId).emit(CANVASACTIONS.RECTANGLE, {
+          rectangles,
+          action,
+          username,
+        });
       });
-    });
-  });
-  socket.on(CANVASACTIONS.CIRCLE, ({ roomId, circles, action }) => {
+    }
+  );
+  socket.on(CANVASACTIONS.CIRCLE, ({ roomId, circles, action, username }) => {
     const clients = getAllConnectedClients(roomId);
     clients.forEach(({ socketId }) => {
       io.to(socketId).emit(CANVASACTIONS.CIRCLE, {
         circles,
         action,
+        username,
       });
     });
   });
-  socket.on(CANVASACTIONS.ARROW, ({ roomId, arrows, action }) => {
+  socket.on(CANVASACTIONS.ARROW, ({ roomId, arrows, action, username }) => {
     const clients = getAllConnectedClients(roomId);
     clients.forEach(({ socketId }) => {
       io.to(socketId).emit(CANVASACTIONS.ARROW, {
         arrows,
         action,
+        username,
       });
     });
   });
-  socket.on(CANVASACTIONS.SCRIBBLE, ({ roomId, scribbles, action }) => {
-    const clients = getAllConnectedClients(roomId);
-    clients.forEach(({ socketId }) => {
-      io.to(socketId).emit(CANVASACTIONS.SCRIBBLE, {
-        scribbles,
-        action,
+  socket.on(
+    CANVASACTIONS.SCRIBBLE,
+    ({ roomId, scribbles, action, username }) => {
+      const clients = getAllConnectedClients(roomId);
+      clients.forEach(({ socketId }) => {
+        io.to(socketId).emit(CANVASACTIONS.SCRIBBLE, {
+          scribbles,
+          action,
+          username,
+        });
       });
-    });
-  });
-  socket.on(CANVASACTIONS.TEXT, ({ roomId, texts, action }) => {
+    }
+  );
+  socket.on(CANVASACTIONS.TEXT, ({ roomId, texts, action, username }) => {
     const clients = getAllConnectedClients(roomId);
     clients.forEach(({ socketId }) => {
       io.to(socketId).emit(CANVASACTIONS.TEXT, {
         texts,
         action,
+        username,
       });
     });
   });
-  socket.on(CANVASACTIONS.ERASE, ({ roomId, shapeId, action }) => {
+  socket.on(CANVASACTIONS.ERASE, ({ roomId, shapeId, action, username }) => {
     const clients = getAllConnectedClients(roomId);
     clients.forEach(({ socketId }) => {
       io.to(socketId).emit(CANVASACTIONS.ERASE, {
         shapeId,
         action,
+        username,
       });
     });
   });
