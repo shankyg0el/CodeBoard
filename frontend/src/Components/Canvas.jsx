@@ -21,16 +21,20 @@ import { LuEraser } from "react-icons/lu";
 
 function Canvas({
   socketRef,
-  roomId,
-  actionPerformed,
   newRectangles,
   newCircles,
   newArrows,
   newScribbles,
   newTexts,
-  newLayerContent,
+  username,
   shapeId,
+  roomId,
 }) {
+  const [stage, setStage] = useState({
+    scale: 1,
+    x: 0,
+    y: 0,
+  });
   const canvasRef = useRef(null);
   const layerRef = useRef(null);
   const rectRef = useRef(null);
@@ -38,12 +42,12 @@ function Canvas({
   const currentShapeId = useRef(null);
   const eraseShapeId = useRef(null);
   const transformerRef = useRef(null);
+  const isObjectSelected = useRef(false);
   const [action, setAction] = useState(CANVASACTIONS.SELECT);
   const [fillColor, setFillColor] = useState("transparent");
   const [strokeColor, setStrokeColor] = useState("#ffffff");
   const [canvasText, setCanvasText] = useState("");
   const [cursorType, setCursorType] = useState("cursor-default");
-
   const [rectangles, setRectangles] = useState([]);
   const [circles, setCircles] = useState([]);
   const [arrows, setArrows] = useState([]);
@@ -53,36 +57,43 @@ function Canvas({
   const isDraggable = action === CANVASACTIONS.SELECT;
 
   useEffect(() => {
-    switch (actionPerformed) {
-      case CANVASACTIONS.RECTANGLE:
-        setRectangles(newRectangles);
-        break;
-      case CANVASACTIONS.CIRCLE:
-        setCircles(newCircles);
-        break;
-      case CANVASACTIONS.ARROW:
-        setArrows(newArrows);
-        break;
-      case CANVASACTIONS.SCRIBBLE:
-        setScribbles(newScribbles);
-        break;
-      case CANVASACTIONS.TEXT:
-        setTexts(newTexts);
-        break;
-      case CANVASACTIONS.ERASE:
-        layerRef.current.children.forEach((element) => {
-          if (element._id === shapeId) {
-            element.destroy();
-          }
-        });
+    if (newRectangles.length > 0) setRectangles(newRectangles);
+    if (newCircles.length > 0) setCircles(newCircles);
+    if (newArrows.length > 0) setArrows(newArrows);
+    if (newScribbles.length > 0) setScribbles(newScribbles);
+    if (newTexts.length > 0) setTexts(newTexts);
+    if (shapeId) {
+      console.log("Shape id is", shapeId);
+      layerRef.current.children.forEach((element) => {
+        if (element._id === shapeId) {
+          element.destroy();
+        }
+      });
+      shapeId = null;
     }
   }, [newRectangles, newCircles, newArrows, newScribbles, newTexts, shapeId]);
 
-  function handlePointerDown() {
+  function handlePointerDown(e) {
     if (action === CANVASACTIONS.SELECT) return;
 
     const canvas = canvasRef.current;
-    const { x, y } = canvas.getPointerPosition();
+    let { x, y } = canvas.getPointerPosition();
+
+    // console.log(stage.x, stage.y, stage.scale);
+
+    // console.log("Before Click position is", x, y);
+
+    // x = x + Math.abs(stage.x);
+    // y = y + Math.abs(stage.y);
+
+    // console.log("After Click position is", x, y);
+    // console.log(e);
+    // console.log(e.currentTarget.attrs.x, e.currentTarget.attrs.y);
+    // console.log(
+    //   e.currentTarget._changedPointerPositions[0],
+    //   e.currentTarget._changedPointerPositions[0].y
+    // );
+
     const id = uuid();
     currentShapeId.current = id;
     isDrawing.current = true;
@@ -150,11 +161,14 @@ function Canvas({
         break;
     }
   }
-  function handlePointerMove() {
+  function handlePointerMove(e) {
     if (action === CANVASACTIONS.SELECT || !isDrawing.current) return;
 
     const canvas = canvasRef.current;
-    const { x, y } = canvas.getPointerPosition();
+    let { x, y } = canvas.getPointerPosition();
+
+    // x = x + Math.abs(stage.x);
+    // y = y + Math.abs(stage.y);
 
     switch (action) {
       case CANVASACTIONS.RECTANGLE:
@@ -220,6 +234,7 @@ function Canvas({
           rectangles,
           roomId,
           action: CANVASACTIONS.RECTANGLE,
+          username,
         });
         break;
       case CANVASACTIONS.CIRCLE:
@@ -227,6 +242,7 @@ function Canvas({
           circles,
           roomId,
           action: CANVASACTIONS.CIRCLE,
+          username,
         });
         break;
       case CANVASACTIONS.ARROW:
@@ -234,6 +250,7 @@ function Canvas({
           arrows,
           roomId,
           action: CANVASACTIONS.ARROW,
+          username,
         });
         break;
       case CANVASACTIONS.SCRIBBLE:
@@ -241,6 +258,7 @@ function Canvas({
           scribbles,
           roomId,
           action: CANVASACTIONS.SCRIBBLE,
+          username,
         });
         break;
       case CANVASACTIONS.TEXT:
@@ -248,26 +266,28 @@ function Canvas({
           texts,
           roomId,
           action: CANVASACTIONS.TEXT,
+          username,
         });
         break;
     }
   }
 
-  function exportCanvasData() {
-    const uri = canvasRef.current.toDataURL();
-    const link = document.createElement("a");
-    link.download = "canvas.png";
-    link.href = uri;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }
+  // function exportCanvasData() {
+  //   const uri = canvasRef.current.toDataURL();
+  //   const link = document.createElement("a");
+  //   link.download = "canvas.png";
+  //   link.href = uri;
+  //   document.body.appendChild(link);
+  //   link.click();
+  //   document.body.removeChild(link);
+  // }
 
   function handleShapeClick(e) {
     const layer = layerRef.current;
     if (action === CANVASACTIONS.SELECT) {
       const target = e.currentTarget;
       transformerRef.current.nodes([target]);
+      isObjectSelected.current = true;
     }
 
     if (action === CANVASACTIONS.ERASE) {
@@ -278,10 +298,31 @@ function Canvas({
         shapeId: e.target._id,
         roomId,
         action: CANVASACTIONS.ERASE,
+        username,
       });
     }
   }
 
+  function handleWheel(e) {
+    e.evt.preventDefault();
+
+    if (action !== CANVASACTIONS.SELECT) return;
+    const scaleBy = 1.02;
+    const stage = e.target.getStage();
+    const oldScale = stage.scaleX();
+    const mousePointTo = {
+      x: stage.getPointerPosition().x / oldScale - stage.x() / oldScale,
+      y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale,
+    };
+
+    const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
+
+    setStage({
+      scale: newScale,
+      x: (stage.getPointerPosition().x / newScale - mousePointTo.x) * newScale,
+      y: (stage.getPointerPosition().y / newScale - mousePointTo.y) * newScale,
+    });
+  }
   return (
     <div className="relative">
       <div className="absolute top-0 z-10 w-full py-2 ">
@@ -387,16 +428,10 @@ function Canvas({
                 title="Stroke Color "
               />
             </button>
-            <button
-              onClick={exportCanvasData}
-              className="rounded hover:bg-secondary"
-            >
-              <MdOutlineFileDownload className="text-[28px]" />
-            </button>
           </div>
           {action === CANVASACTIONS.TEXT && (
             <input
-              className="w-full p-2 bg-transparent border rounded-l outline-0 "
+              className="z-40 w-full p-2 bg-transparent border rounded-l outline-0"
               type="text"
               value={canvasText}
               onChange={(e) => setCanvasText(e.target.value)}
@@ -406,26 +441,30 @@ function Canvas({
         </div>
       </div>
       <Stage
-        className={`${cursorType} `}
+        className={`${cursorType} bg-[#1e1e1e] `}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         ref={canvasRef}
         width={window.innerWidth}
         height={window.innerHeight}
+        onWheel={handleWheel}
+        scaleX={stage.scale}
+        scaleY={stage.scale}
+        x={stage.x}
+        y={stage.y}
+        draggable={isDraggable}
       >
         <Layer ref={layerRef}>
           <Rect
             x={0}
             y={0}
-            width={window.innerWidth}
             height={window.innerHeight}
-            fill="#1e1e1e"
+            width={window.innerWidth}
             onClick={() => {
               transformerRef.current.nodes([]);
             }}
           />
-
           {rectangles.map((rectangle) => (
             <Rect
               key={rectangle.id}
