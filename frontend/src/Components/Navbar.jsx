@@ -7,11 +7,16 @@ import { useEffect, useRef, useState } from "react";
 import ViewMembers from "./ViewMembers";
 import Chat from "./Chat";
 import Settings from "./Settings";
-function Navbar({ socketRef, messages, handleTabClick }) {
+function Navbar({ socketRef, messages, handleTabClick, setShowCanvas }) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [lastClickedIcon, setLastClickedIcon] = useState("code");
 
   function handleCodeOrCanvasClick(icon) {
+    if (icon === "canvas") {
+      setShowCanvas(true);
+    } else {
+      setShowCanvas(false);
+    }
     setLastClickedIcon(icon);
     handleTabClick(icon);
     setShowSidebar(false);
@@ -91,7 +96,7 @@ function Navbar({ socketRef, messages, handleTabClick }) {
           showSidebar ? "block" : "hidden"
         }`}
       >
-        {lastClickedIcon === "settings" && <Settings />}
+        {lastClickedIcon === "settings" && <Settings socketRef={socketRef} />}
         {lastClickedIcon === "viewmembers" && <ViewMembers />}
         {lastClickedIcon === "chat" && (
           <Chat socketRef={socketRef} messagesArray={messages} />

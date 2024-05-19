@@ -2,13 +2,16 @@ const express = require("express");
 const { Server } = require("socket.io");
 const http = require("http");
 const { ACTIONS } = require("./ACTIONS.JS");
-const { CANVASACTIONS } = require("./ACTIONS.JS");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: "*",
+  },
+});
 
-const userSockerMap = {};
+const userSocketMap = {};
 const roomData = {};
 
 function getAllConnectedClients(roomId) {
@@ -16,7 +19,7 @@ function getAllConnectedClients(roomId) {
     (socketId) => {
       return {
         socketId,
-        username: userSockerMap[socketId],
+        username: userSocketMap[socketId],
       };
     }
   );
@@ -38,7 +41,13 @@ io.on("connection", (socket) => {
   console.log("New client connected", socket.id);
 
   socket.on(ACTIONS.JOIN, ({ roomId, username }) => {
-    userSockerMap[socket.id] = username;
+    if (!roomData[roomId]) {
+      code = `function sayHello() {
+        console.log("Hello, World!");
+  }`;
+      roomData[roomId] = { code, canvasData: [], messages: [] };
+    }
+    userSocketMap[socket.id] = username;
     socket.join(roomId);
     const clients = getAllConnectedClients(roomId);
     clients.forEach((client) => {
@@ -52,98 +61,75 @@ io.on("connection", (socket) => {
 
   socket.on(ACTIONS.CODE_CHANGE, ({ roomId, code }) => {
     //Send to all users except the sender
-    roomData[roomId] = code;
+    roomData[roomId] = { ...roomData[roomId], code };
     socket.in(roomId).emit(ACTIONS.CODE_CHANGE, { code });
   });
 
-  socket.on(ACTIONS.SYNC_CODE, ({ roomId, socketId }) => {
+  socket.on(ACTIONS.SYNC_CHANGES, ({ roomId, socketId }) => {
     //Send to just newly joined user.
-    if (!roomData[roomId]) {
-      roomData[roomId] = `function sayHello() {
-   console.log("Hello, World!");
-}`;
-    }
-    io.to(socketId).emit(ACTIONS.CODE_CHANGE, { code: roomData[roomId] });
+    io.to(socketId).emit(ACTIONS.SYNC_CHANGES, { roomData: roomData[roomId] });
   });
 
   socket.on(ACTIONS.MESSAGE, ({ roomId, message }) => {
+    if (roomData[roomId]) {
+      roomData[roomId] = {
+        ...roomData[roomId],
+        messages: [
+          ...roomData[roomId].messages,
+          {
+            message,
+            id: Date.now(),
+            username: userSocketMap[socket.id],
+            timestamp: generateTimeStamp(),
+          },
+        ],
+      };
+    }
+    //Emit even to all users including the sender
+    io.in(roomId).emit(ACTIONS.MESSAGE, {
+      message,
+      id: Date.now(),
+      username: userSocketMap[socket.id],
+      timestamp: generateTimeStamp(),
+    });
+  });
+
+  socket.on(ACTIONS.LANGUAGE_CHANGE, ({ roomId, username, language }) => {
+    socket.in(roomId).emit(ACTIONS.LANGUAGE_CHANGE, {
+      username,
+      language,
+    });
+  });
+
+  socket.on(ACTIONS.CANVAS_CHANGE, ({ roomId, type, username, newChanges }) => {
+    if (roomData[roomId]) {
+      roomData[roomId] = {
+        ...roomData[roomId],
+        canvasData: [...roomData[roomId].canvasData, ...newChanges],
+      };
+    }
+
     const clients = getAllConnectedClients(roomId);
+
     clients.forEach(({ socketId }) => {
-      io.to(socketId).emit(ACTIONS.MESSAGE, {
-        message,
-        id: Date.now(),
-        username: userSockerMap[socket.id],
-        timestamp: generateTimeStamp(),
+      io.to(socketId).emit(ACTIONS.CANVAS_CHANGE, {
+        type,
+        username,
+        newChanges,
       });
     });
   });
 
-  socket.on(
-    CANVASACTIONS.RECTANGLE,
-    ({ roomId, rectangles, action, username }) => {
-      const clients = getAllConnectedClients(roomId);
-      clients.forEach(({ socketId }) => {
-        io.to(socketId).emit(CANVASACTIONS.RECTANGLE, {
-          rectangles,
-          action,
-          username,
-        });
-      });
-    }
-  );
-  socket.on(CANVASACTIONS.CIRCLE, ({ roomId, circles, action, username }) => {
-    const clients = getAllConnectedClients(roomId);
-    clients.forEach(({ socketId }) => {
-      io.to(socketId).emit(CANVASACTIONS.CIRCLE, {
-        circles,
-        action,
-        username,
-      });
-    });
-  });
-  socket.on(CANVASACTIONS.ARROW, ({ roomId, arrows, action, username }) => {
-    const clients = getAllConnectedClients(roomId);
-    clients.forEach(({ socketId }) => {
-      io.to(socketId).emit(CANVASACTIONS.ARROW, {
-        arrows,
-        action,
-        username,
-      });
-    });
-  });
-  socket.on(
-    CANVASACTIONS.SCRIBBLE,
-    ({ roomId, scribbles, action, username }) => {
-      const clients = getAllConnectedClients(roomId);
-      clients.forEach(({ socketId }) => {
-        io.to(socketId).emit(CANVASACTIONS.SCRIBBLE, {
-          scribbles,
-          action,
-          username,
-        });
-      });
-    }
-  );
-  socket.on(CANVASACTIONS.TEXT, ({ roomId, texts, action, username }) => {
-    const clients = getAllConnectedClients(roomId);
-    clients.forEach(({ socketId }) => {
-      io.to(socketId).emit(CANVASACTIONS.TEXT, {
-        texts,
-        action,
-        username,
-      });
-    });
-  });
-  socket.on(CANVASACTIONS.ERASE, ({ roomId, shapeId, action, username }) => {
-    const clients = getAllConnectedClients(roomId);
-    clients.forEach(({ socketId }) => {
-      io.to(socketId).emit(CANVASACTIONS.ERASE, {
-        shapeId,
-        action,
-        username,
-      });
-    });
-  });
+  // socket.on("user-presence", ({ presence, roomId, username }) => {
+  //   const clients = getAllConnectedClients(roomId);
+
+  //   clients.forEach(({ socketId }) => {
+  //     io.to(socketId).emit("user-presence", {
+  //       username,
+  //       presence,
+  //     });
+  //   });
+  // });
 
   socket.on("disconnecting", () => {
     const rooms = [...socket.rooms];
@@ -151,10 +137,11 @@ io.on("connection", (socket) => {
       getAllConnectedClients(roomId).length === 1 && delete roomData[roomId];
       socket.to(roomId).emit(ACTIONS.DISCONNECTED, {
         socketId: socket.id,
-        username: userSockerMap[socket.id],
+        username: userSocketMap[socket.id],
       });
     });
-    delete userSockerMap[socket.id];
+    delete userSocketMap[socket.id];
+    console.log(roomData);
     socket.leave();
   });
 });

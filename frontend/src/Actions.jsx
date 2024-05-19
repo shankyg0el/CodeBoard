@@ -3,22 +3,10 @@ const ACTIONS = {
   JOINED: "joined",
   DISCONNECTED: "disconnected",
   CODE_CHANGE: "code-change",
-  SYNC_CODE: "sync-code",
+  LANGUAGE_CHANGE: "language-change",
+  SYNC_CHANGES: "sync-changes",
   MESSAGE: "message",
+  CANVAS_CHANGE: "canvas-change",
 };
-
-const CANVASACTIONS = {
-  SELECT: "SELECT",
-  RECTANGLE: "RECTANGLE",
-  CIRCLE: "CIRCLE",
-  LINE: "LINE",
-  SCRIBBLE: "SCRIBBLE",
-  TEXT: "TEXT",
-  ERASE: "ERASE",
-  CLEAR: "CLEAR",
-  ARROW: "ARROW",
-};
-
-export { CANVASACTIONS };
 
 export default ACTIONS;

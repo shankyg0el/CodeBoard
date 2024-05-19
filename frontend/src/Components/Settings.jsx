@@ -1,8 +1,9 @@
 import * as themes from "@uiw/codemirror-themes-all";
 import { langNames } from "@uiw/codemirror-extensions-langs";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { SettingsContext } from "../../context/SettingsContext";
-function Settings() {
+import ACTIONS from "../Actions";
+function Settings({ socketRef }) {
   const capitalizedLanguagesMap = langNames.reduce((acc, item) => {
     acc[item.charAt(0).toUpperCase() + item.slice(1)] = item;
     return acc;
@@ -13,13 +14,23 @@ function Settings() {
     return acc;
   }, {});
 
-  const [language, setLanguage] = useState("javascript");
-  const [theme, setTheme] = useState("vscodeDark");
+  const [language, setLanguage] = useState("");
+  const [theme, setTheme] = useState("");
   const settingsContext = useContext(SettingsContext);
+
+  useEffect(() => {
+    setLanguage(settingsContext.settings.language);
+    setTheme(settingsContext.settings.theme);
+  }, [settingsContext]);
 
   const handleLanguageChange = (e) => {
     setLanguage(e.target.value);
     settingsContext.updateSettings("language", e.target.value);
+    socketRef.current.emit(ACTIONS.LANGUAGE_CHANGE, {
+      roomId: settingsContext.settings.roomId,
+      username: settingsContext.settings.userName,
+      language: e.target.value,
+    });
   };
   const handleThemeChange = (e) => {
     setTheme(e.target.value);
