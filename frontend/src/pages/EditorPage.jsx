@@ -46,6 +46,7 @@ function EditorPage() {
     async function init() {
       settingsContext.updateSettings("userName", location.state.username);
       settingsContext.updateSettings("roomId", roomId);
+      settingsContext.updateSettings("language", "javascript");
       socketRef.current = await initSocket();
       socketRef.current.on("connect_error", (err) => handleErrors(err));
       socketRef.current.on("connect_failed", (err) => handleErrors(err));
@@ -94,6 +95,9 @@ function EditorPage() {
         if (roomData && roomData.messages.length > 0) {
           setMessages(roomData.messages);
         }
+        if (roomData && roomData.selectedLanguage.length > 0) {
+          settingsContext.updateSettings("language", roomData.selectedLanguage);
+        }
       });
 
       // Listening for message
@@ -116,7 +120,6 @@ function EditorPage() {
       socketRef.current.on(
         ACTIONS.LANGUAGE_CHANGE,
         ({ username, language }) => {
-          console.log("New language is", language);
           settingsContext.updateSettings("language", language);
         }
       );

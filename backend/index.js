@@ -45,7 +45,12 @@ io.on("connection", (socket) => {
       code = `function sayHello() {
         console.log("Hello, World!");
   }`;
-      roomData[roomId] = { code, canvasData: [], messages: [] };
+      roomData[roomId] = {
+        code,
+        canvasData: [],
+        messages: [],
+        selectedLanguage: "",
+      };
     }
     userSocketMap[socket.id] = username;
     socket.join(roomId);
@@ -95,6 +100,12 @@ io.on("connection", (socket) => {
   });
 
   socket.on(ACTIONS.LANGUAGE_CHANGE, ({ roomId, username, language }) => {
+    if (roomData[roomId]) {
+      roomData[roomId] = {
+        ...roomData[roomId],
+        selectedLanguage: language,
+      };
+    }
     socket.in(roomId).emit(ACTIONS.LANGUAGE_CHANGE, {
       username,
       language,
@@ -141,7 +152,6 @@ io.on("connection", (socket) => {
       });
     });
     delete userSocketMap[socket.id];
-    console.log(roomData);
     socket.leave();
   });
 });

@@ -116,26 +116,6 @@ function Canvas({ socketRef, roomId, username, newCanvasChanges, canvasData }) {
     store.listen(handleCanvasChanges);
   }, [store]);
 
-  function handleWheel(e) {
-    e.evt.preventDefault();
-
-    if (action !== CANVASACTIONS.SELECT) return;
-    const scaleBy = 1.02;
-    const stage = e.target.getStage();
-    const oldScale = stage.scaleX();
-    const mousePointTo = {
-      x: stage.getPointerPosition().x / oldScale - stage.x() / oldScale,
-      y: stage.getPointerPosition().y / oldScale - stage.y() / oldScale,
-    };
-
-    const newScale = e.evt.deltaY < 0 ? oldScale * scaleBy : oldScale / scaleBy;
-
-    setStage({
-      scale: newScale,
-      x: (stage.getPointerPosition().x / newScale - mousePointTo.x) * newScale,
-      y: (stage.getPointerPosition().y / newScale - mousePointTo.y) * newScale,
-    });
-  }
   return (
     <div className="fixed top-0 bottom-0 right-0 left-0 lg:left-[49px]">
       <Tldraw

@@ -38,7 +38,7 @@ function HomePage() {
       </div>
       <div>
         <p className="text-3xl md:text-[45px] lg:text-[50px] text-center font-Workbench pb-2">
-          Codeboard
+          CodeBoard
         </p>
         <p className=" text-[15px] md:text-xl lg:text-[20px] text-center">
           The collaborative coding & brainstorming platform.
