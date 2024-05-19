@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "build": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
+    "@tldraw/store": "^2.1.1",
     "@uiw/codemirror-extensions-color": "^4.21.25",
     "@uiw/codemirror-extensions-hyper-link": "^4.21.25",
     "@uiw/codemirror-extensions-langs": "^4.21.25",
@@ -25,6 +26,7 @@
     "react-konva": "^18.2.10",
     "react-router-dom": "^6.22.3",
     "socket.io-client": "^4.7.5",
+    "tldraw": "^2.1.4",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

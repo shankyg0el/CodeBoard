@@ -1,4 +1,6 @@
 @import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&family=Workbench&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@500;700&display=swap");
+@import url("tldraw/tldraw.css");
 
 @tailwind base;
 @tailwind components;
@@ -33,4 +35,19 @@ body {
   background-size: 0.8rem;
   background-repeat: no-repeat;
   background-position: right 0.8rem center;
+}
+.tl-background {
+  background-color: #1e1e1e;
+}
+.tlui-debug-panel {
+  display: none;
+}
+.tlui-toolbar__tools {
+  margin-bottom: 55px;
+}
+
+@media (min-width: 1024px) {
+  .tlui-toolbar__tools {
+    margin-bottom: 0px;
+  }
 }

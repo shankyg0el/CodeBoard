@@ -14,7 +14,7 @@ function ViewMembers() {
   const handleCopyLinkClick = async () => {
     try {
       await navigator.clipboard.writeText(roomId);
-      toast.success("URL copied to clipboard");
+      toast.success("Room Name copied to clipboard");
     } catch (error) {
       toast.error("Unable to copy URL to clipboard");
       console.log(error);

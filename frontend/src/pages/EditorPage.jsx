@@ -9,26 +9,21 @@ import { loadLanguage } from "@uiw/codemirror-extensions-langs";
 import { color } from "@uiw/codemirror-extensions-color";
 import { hyperLink } from "@uiw/codemirror-extensions-hyper-link";
 import { initSocket } from "../socket";
-import ACTIONS, { CANVASACTIONS } from "../Actions";
+import ACTIONS from "../Actions";
 import Canvas from "../Components/Canvas";
 
 function EditorPage() {
   const socketRef = useRef(null);
-  const settingsContext = useContext(SettingsContext);
   const [showCanvas, setShowCanvas] = useState(false);
+  const [newCanvasChanges, setNewCanvasChanges] = useState([]);
+  const [canvasData, setCanvasData] = useState([]);
+  const settingsContext = useContext(SettingsContext);
   const location = useLocation();
   const navigate = useNavigate();
   const { roomId } = useParams();
   const [editorContent, setEditorContent] = useState("");
   const [clients, setClients] = useState([]);
   const [messages, setMessages] = useState([]);
-  const [rectangles, setRectangles] = useState([]);
-  const [circles, setCircles] = useState([]);
-  const [arrows, setArrows] = useState([]);
-  const [scribbles, setScribbles] = useState([]);
-  const [texts, setTexts] = useState([]);
-  const [actionPerformed, setActionPerformed] = useState("");
-  const [shapeId, setShapeId] = useState("");
   const [currentTab, setCurrentTab] = useState("code");
 
   const handleEditorChange = (value) => {
@@ -71,7 +66,7 @@ function EditorPage() {
           }
           setClients(clients);
           settingsContext.updateSettings("clients", clients);
-          socketRef.current.emit(ACTIONS.SYNC_CODE, {
+          socketRef.current.emit(ACTIONS.SYNC_CHANGES, {
             roomId,
             socketId,
           });
@@ -84,12 +79,28 @@ function EditorPage() {
           setEditorContent(code);
         }
       });
+      // Listening for code change
+      socketRef.current.on(ACTIONS.SYNC_CHANGES, ({ roomData }) => {
+        if (roomData) {
+          console.log(roomData);
+        }
+        if (roomData && roomData.code !== null) {
+          setEditorContent(roomData.code);
+        }
+
+        if (roomData && roomData.canvasData.length > 0) {
+          setCanvasData(roomData.canvasData);
+        }
+        if (roomData && roomData.messages.length > 0) {
+          setMessages(roomData.messages);
+        }
+      });
 
       // Listening for message
       socketRef.current.on(
         ACTIONS.MESSAGE,
         ({ message, id, username, timestamp }) => {
-          if (username !== location.state.username) {
+          if (username !== location.state?.username) {
             toast(`${username} sent a message`, {
               icon: "💬",
             });
@@ -102,88 +113,23 @@ function EditorPage() {
         }
       );
 
-      // Listening foR Rectangles Drawn on Canvas
       socketRef.current.on(
-        CANVASACTIONS.RECTANGLE,
-        ({ rectangles, action, username }) => {
-          if (username !== location.state?.username) {
-            toast(`${username} has made some changes in the canvas`, {
-              icon: "🖌️",
-            });
-          }
-          setActionPerformed(action);
-          setRectangles(rectangles);
+        ACTIONS.LANGUAGE_CHANGE,
+        ({ username, language }) => {
+          console.log("New language is", language);
+          settingsContext.updateSettings("language", language);
         }
       );
 
-      // Listening foR Circles Drawn on Canvas
       socketRef.current.on(
-        CANVASACTIONS.CIRCLE,
-        ({ circles, action, username }) => {
-          if (username !== location.state?.username) {
-            toast(`${username} has made some changes in the canvas`, {
-              icon: "🖌️",
-            });
+        ACTIONS.CANVAS_CHANGE,
+        ({ type, username, newChanges }) => {
+          if (username !== location.state.username) {
+            setNewCanvasChanges(newChanges);
           }
-          setActionPerformed(action);
-          setCircles(circles);
+          setCanvasData((prev) => [...prev, ...newChanges]);
         }
       );
-
-      // Listening foR Arrows Drawn on Canvas
-      socketRef.current.on(
-        CANVASACTIONS.ARROW,
-        ({ arrows, action, username }) => {
-          if (username !== location.state?.username) {
-            toast(`${username} has made some changes in the canvas`, {
-              icon: "🖌️",
-            });
-          }
-          setArrows(arrows);
-          setActionPerformed(action);
-        }
-      );
-
-      // Listening foR Scribbles Drawn on Canvas
-      socketRef.current.on(
-        CANVASACTIONS.SCRIBBLE,
-        ({ scribbles, action, username }) => {
-          if (username !== location.state?.username) {
-            toast(`${username} has made some changes in the canvas`, {
-              icon: "🖌️",
-            });
-          }
-          setScribbles(scribbles);
-          setActionPerformed(action);
-        }
-      );
-      // Listening foR text typed on Canvas
-      socketRef.current.on(
-        CANVASACTIONS.TEXT,
-        ({ texts, action, username }) => {
-          if (username !== location.state?.username) {
-            toast(`${username} has made some changes in the canvas`, {
-              icon: "🖌️",
-            });
-          }
-          setTexts(texts);
-          setActionPerformed(action);
-        }
-      );
-      // Listening foR text typed on Canvas
-      socketRef.current.on(
-        CANVASACTIONS.ERASE,
-        ({ action, shapeId, username }) => {
-          if (username !== location.state?.username) {
-            toast(`${username} has made some changes in the canvas`, {
-              icon: "🖌️",
-            });
-          }
-          setActionPerformed(action);
-          setShapeId(shapeId);
-        }
-      );
-
       // Listening for disconnected
       socketRef.current.on(ACTIONS.DISCONNECTED, ({ socketId, username }) => {
         toast(`${username} left the room.`, {
@@ -202,8 +148,11 @@ function EditorPage() {
     };
   }, []);
 
+  function showCanvasfunc(val) {
+    setShowCanvas(val);
+  }
+
   function handleTabClick(icon) {
-    console.log(icon);
     switch (icon) {
       case "code":
         setCurrentTab(icon);
@@ -230,19 +179,16 @@ function EditorPage() {
         socketRef={socketRef}
         messages={messages}
         handleTabClick={handleTabClick}
+        setShowCanvas={showCanvasfunc}
       />
-      {currentTab == "canvas" ? (
+      {showCanvas ? (
         <Canvas
           username={location.state.username}
           socketRef={socketRef}
           roomId={roomId}
-          newRectangles={rectangles}
-          newCircles={circles}
-          newArrows={arrows}
-          newScribbles={scribbles}
-          newTexts={texts}
-          actionPerformed={actionPerformed}
-          shapeId={shapeId}
+          newCanvasChanges={newCanvasChanges}
+          canvasData={canvasData}
+          currentTab={currentTab}
         />
       ) : (
         <CodeMirror
