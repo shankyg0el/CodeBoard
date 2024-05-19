@@ -1,7 +1,7 @@
 const express = require("express");
 const { Server } = require("socket.io");
 const http = require("http");
-const { ACTIONS } = require("./Actions.js");
+const { ACTIONS } = require("./Actions");
 
 const app = express();
 const server = http.createServer(app);
