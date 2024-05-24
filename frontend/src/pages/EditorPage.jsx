@@ -1,22 +1,31 @@
-import { useContext, useEffect, useRef, useState } from "react";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
+import {
+  useBlocker,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { SettingsContext } from "../../context/SettingsContext";
 import Navbar from "../Components/Navbar";
 import CodeMirror from "@uiw/react-codemirror";
 import * as themes from "@uiw/codemirror-themes-all";
 import { loadLanguage } from "@uiw/codemirror-extensions-langs";
+import { EditorView } from "@uiw/react-codemirror";
 import { color } from "@uiw/codemirror-extensions-color";
 import { hyperLink } from "@uiw/codemirror-extensions-hyper-link";
 import { initSocket } from "../socket";
 import ACTIONS from "../Actions";
 import Canvas from "../Components/Canvas";
+import NameModal from "../Components/NameModal";
 
 function EditorPage() {
   const socketRef = useRef(null);
   const [showCanvas, setShowCanvas] = useState(false);
   const [newCanvasChanges, setNewCanvasChanges] = useState([]);
   const [canvasData, setCanvasData] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [username, setUsername] = useState("");
   const settingsContext = useContext(SettingsContext);
   const location = useLocation();
   const navigate = useNavigate();
@@ -32,9 +41,12 @@ function EditorPage() {
   };
 
   useEffect(() => {
-    if (!location.state || !location.state.username) {
-      toast.error("Oops. Something went wrong. Please try again later.");
-      navigate("/", { replace: true });
+    if (
+      !sessionStorage.getItem("currentUsername") &&
+      (!location.state || !location.state.username)
+    ) {
+      setShowModal(true);
+      return;
     }
 
     function handleErrors(e) {
@@ -44,7 +56,11 @@ function EditorPage() {
     }
 
     async function init() {
-      settingsContext.updateSettings("userName", location.state.username);
+      const currentUsername = !location.state
+        ? sessionStorage.getItem("currentUsername")
+        : location.state.username;
+
+      settingsContext.updateSettings("userName", currentUsername);
       settingsContext.updateSettings("roomId", roomId);
       settingsContext.updateSettings("language", "javascript");
       socketRef.current = await initSocket();
@@ -53,20 +69,19 @@ function EditorPage() {
 
       socketRef.current.emit(ACTIONS.JOIN, {
         roomId,
-        username: location.state?.username,
+        username: currentUsername,
       });
 
       // Listening for joined event
       socketRef.current.on(
         ACTIONS.JOINED,
         ({ clients, username, socketId }) => {
-          if (username !== location.state?.username) {
+          if (username !== currentUsername) {
             toast(`${username} joined the room.`, {
               icon: "📢",
             });
           }
           setClients(clients);
-          settingsContext.updateSettings("clients", clients);
           socketRef.current.emit(ACTIONS.SYNC_CHANGES, {
             roomId,
             socketId,
@@ -104,7 +119,7 @@ function EditorPage() {
       socketRef.current.on(
         ACTIONS.MESSAGE,
         ({ message, id, username, timestamp }) => {
-          if (username !== location.state?.username) {
+          if (username !== currentUsername) {
             toast(`${username} sent a message`, {
               icon: "💬",
             });
@@ -127,7 +142,7 @@ function EditorPage() {
       socketRef.current.on(
         ACTIONS.CANVAS_CHANGE,
         ({ type, username, newChanges }) => {
-          if (username !== location.state.username) {
+          if (username !== currentUsername) {
             setNewCanvasChanges(newChanges);
           }
           setCanvasData((prev) => [...prev, ...newChanges]);
@@ -149,10 +164,20 @@ function EditorPage() {
       socketRef.current.off(ACTIONS.JOINED);
       socketRef.current.off(ACTIONS.DISCONNECTED);
     };
-  }, []);
+  }, [username]);
 
   function showCanvasfunc(val) {
     setShowCanvas(val);
+  }
+
+  function handleModalJoinClick(username) {
+    if (username.length < 5 || username.length > 20) {
+      return;
+    }
+
+    sessionStorage.setItem("currentUsername", username);
+    setUsername(username);
+    setShowModal(false);
   }
 
   function handleTabClick(icon) {
@@ -175,40 +200,57 @@ function EditorPage() {
     }
   }
 
+  const blocker = useCallback(() => {
+    // Display a dialog box to the user.
+    var message = "Are you sure you want to leave this page?";
+    var result = window.confirm(message);
+
+    // If the user clicks on the "Cancel" button, prevent the browser from navigating away from the page.
+    return !result;
+  }, []);
+
+  useBlocker(blocker);
+
   return (
-    <div className="flex">
-      <Navbar
-        clients={clients}
-        socketRef={socketRef}
-        messages={messages}
-        handleTabClick={handleTabClick}
-        setShowCanvas={showCanvasfunc}
-      />
-      {showCanvas ? (
-        <Canvas
-          username={location.state.username}
-          socketRef={socketRef}
-          roomId={roomId}
-          newCanvasChanges={newCanvasChanges}
-          canvasData={canvasData}
-          currentTab={currentTab}
-        />
-      ) : (
-        <CodeMirror
-          className="overflow-auto"
-          value={editorContent}
-          onChange={handleEditorChange}
-          extensions={[
-            loadLanguage(settingsContext.settings.language),
-            color,
-            hyperLink,
-          ]}
-          theme={themes[settingsContext.settings.theme]}
-          width="100vw"
-          height="100vh"
-          style={{ fontSize: "20px" }}
-        />
-      )}
+    <div className="relative">
+      {showModal && <NameModal handleJoinClick={handleModalJoinClick} />}
+      <div className="flex">
+        {!showModal && (
+          <Navbar
+            clients={clients}
+            socketRef={socketRef}
+            messages={messages}
+            handleTabClick={handleTabClick}
+            setShowCanvas={showCanvasfunc}
+          />
+        )}
+        {showCanvas ? (
+          <Canvas
+            username={!location.state ? username : location.state.username}
+            socketRef={socketRef}
+            roomId={roomId}
+            newCanvasChanges={newCanvasChanges}
+            canvasData={canvasData}
+            currentTab={currentTab}
+          />
+        ) : (
+          <CodeMirror
+            className="overflow-auto"
+            value={editorContent}
+            onChange={handleEditorChange}
+            extensions={[
+              loadLanguage(settingsContext.settings.language),
+              color,
+              hyperLink,
+              EditorView.lineWrapping,
+            ]}
+            theme={themes[settingsContext.settings.theme]}
+            width="100vw"
+            height="100vh"
+            style={{ fontSize: "20px" }}
+          />
+        )}
+      </div>
     </div>
   );
 }

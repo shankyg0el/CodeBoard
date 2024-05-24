@@ -6,9 +6,8 @@ export function SettingsProvider({ children }) {
   const defaultSettings = {
     language: "javascript",
     theme: "vscodeDark",
-    userName: "",
+    username: "",
     roomId: "",
-    clients: [],
   };
   const [settings, setSettings] = useState(defaultSettings);
   const updateSettings = (key, value) => {

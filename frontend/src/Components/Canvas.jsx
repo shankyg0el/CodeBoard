@@ -26,6 +26,7 @@ function generateRandomColor() {
 }
 function Canvas({ socketRef, roomId, username, newCanvasChanges, canvasData }) {
   // const editor = useEditor();
+  console.log("Username is", username);
   const [store] = useState(() => {
     const store = createTLStore({
       shapeUtils: [...defaultShapeUtils],

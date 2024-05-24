@@ -7,7 +7,13 @@ import { useEffect, useRef, useState } from "react";
 import ViewMembers from "./ViewMembers";
 import Chat from "./Chat";
 import Settings from "./Settings";
-function Navbar({ socketRef, messages, handleTabClick, setShowCanvas }) {
+function Navbar({
+  socketRef,
+  messages,
+  clients,
+  handleTabClick,
+  setShowCanvas,
+}) {
   const [showSidebar, setShowSidebar] = useState(false);
   const [lastClickedIcon, setLastClickedIcon] = useState("code");
 
@@ -97,7 +103,7 @@ function Navbar({ socketRef, messages, handleTabClick, setShowCanvas }) {
         }`}
       >
         {lastClickedIcon === "settings" && <Settings socketRef={socketRef} />}
-        {lastClickedIcon === "viewmembers" && <ViewMembers />}
+        {lastClickedIcon === "viewmembers" && <ViewMembers clients={clients} />}
         {lastClickedIcon === "chat" && (
           <Chat socketRef={socketRef} messagesArray={messages} />
         )}

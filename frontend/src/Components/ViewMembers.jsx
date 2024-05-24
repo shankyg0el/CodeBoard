@@ -6,11 +6,9 @@ import { IoExitOutline } from "react-icons/io5";
 import { useContext } from "react";
 import { SettingsContext } from "../../context/SettingsContext";
 
-function ViewMembers() {
+function ViewMembers({ clients }) {
   const navigate = useNavigate();
   const { roomId } = useParams();
-  const settingsContext = useContext(SettingsContext);
-  const clients = settingsContext.settings.clients;
   const handleCopyLinkClick = async () => {
     try {
       await navigator.clipboard.writeText(roomId);

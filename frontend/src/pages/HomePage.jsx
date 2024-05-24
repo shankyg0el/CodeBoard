@@ -9,6 +9,10 @@ function HomePage() {
   const [roomId, setRoomId] = useState("");
   const [username, setUsername] = useState("");
 
+  const removeSpaces = (roomName) => {
+    return roomName.replace(/\s/g, "");
+  };
+
   const handleEnterClick = (e) => {
     if (e.code === "Enter") {
       handleFormSubmit();
@@ -17,20 +21,38 @@ function HomePage() {
   const handleFormSubmit = (e) => {
     e.preventDefault();
     if (!roomId) {
-      toast.error("Please Enter Room Id", {});
+      toast.error("Please Enter Room Id.", {});
       return;
     }
     if (!username) {
-      toast.error("Please Enter Username", {});
+      toast.error("Please Enter Username.", {});
       return;
     }
 
-    navigate(`/editor/${roomId}`, {
+    if (removeSpaces(roomId).length < 5) {
+      toast.error("Room Id cannot be less than 5 characters excluding spaces.");
+      return;
+    }
+    if (removeSpaces(username).length < 5) {
+      toast.error(
+        "Username cannot be less than 5 characters excluding spaces."
+      );
+      return;
+    }
+
+    navigate(`/editor/${removeSpaces(roomId)}`, {
       state: {
-        username,
+        username: username.trim(),
       },
     });
   };
+
+  window.addEventListener("popstate", (e) => {
+    if (e.state.idx === 1) {
+      navigate("/", { replace: true });
+    }
+  });
+
   return (
     <div className="min-h-screen px-4 text-white pt-14 md:flex md:justify-around md:items-center md:gap-8">
       <div className="pb-5 md:w-1/2 md:pb-0 ">
