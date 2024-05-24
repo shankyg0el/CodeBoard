@@ -51,8 +51,10 @@ function EditorPage() {
 
     function handleErrors(e) {
       console.log("Socker Error", e);
-      toast.error("Socker Connection Failed. Try again later.");
-      navigate("/", { replace: true });
+      toast.error(
+        "Connection to the server failed. Attempting to reconnect..."
+      );
+      // navigate("/", { replace: true });
     }
 
     async function init() {
