@@ -8,10 +8,11 @@ export default {
         primary: "#36AEE5",
         secondary: "#3d404a",
       },
-    },
-    fontFamily: {
-      Workbench: ["Workbench", "sans-serif"],
-      Montserrat: ["Montserrat", "sans-serif"],
+
+      fontFamily: {
+        Workbench: ["Workbench", "sans-serif"],
+        Montserrat: ["Montserrat", "sans-serif"],
+      },
     },
   },
   plugins: [],

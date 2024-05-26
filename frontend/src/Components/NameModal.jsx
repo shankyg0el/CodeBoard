@@ -16,7 +16,9 @@ function NameModal({ handleJoinClick }) {
 
               <div className="p-4 md:p-5">
                 <div className="pb-3">
-                  <p className="text-[15px] ">Your presence requires a name.</p>
+                  <p className="text-[15px] font-mono">
+                    Your presence requires a name.
+                  </p>
                   <input
                     className="bg-secondary border-[#89919d] border-[1px] rounded py-2 text-xl font-bold px-2 outline-none placeholder:font-normal w-full"
                     value={username}
