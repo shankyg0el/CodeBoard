@@ -25,6 +25,7 @@ function EditorPage() {
   const [newCanvasChanges, setNewCanvasChanges] = useState([]);
   const [canvasData, setCanvasData] = useState([]);
   const [showModal, setShowModal] = useState(false);
+  const [showLoader, setShowLoader] = useState(true);
   const [username, setUsername] = useState("");
   const settingsContext = useContext(SettingsContext);
   const location = useLocation();
@@ -51,9 +52,10 @@ function EditorPage() {
 
     function handleErrors(e) {
       console.log("Socker Error", e);
-      toast.error(
-        "Connection to the server failed. Attempting to reconnect..."
-      );
+      setShowLoader(true);
+      // toast.error(
+      //   "Connection to the server failed. Attempting to reconnect..."
+      // );
       // navigate("/", { replace: true });
     }
 
@@ -68,6 +70,8 @@ function EditorPage() {
       socketRef.current = await initSocket();
       socketRef.current.on("connect_error", (err) => handleErrors(err));
       socketRef.current.on("connect_failed", (err) => handleErrors(err));
+
+      setShowLoader(false);
 
       socketRef.current.emit(ACTIONS.JOIN, {
         roomId,
@@ -214,7 +218,8 @@ function EditorPage() {
   useBlocker(blocker);
 
   return (
-    <div className="relative">
+    <div>
+      {showLoader && <CodeboardLoader />}
       {showModal && <NameModal handleJoinClick={handleModalJoinClick} />}
       <div className="flex">
         {!showModal && (
@@ -258,3 +263,21 @@ function EditorPage() {
 }
 
 export default EditorPage;
+
+function CodeboardLoader() {
+  return (
+    <div className="absolute z-50 w-screen h-screen overflow-y-hidden opacity-95 bg-white-300 backdrop-blur-sm bg-opacity-10">
+      <div className="fixed z-50 flex flex-col items-center w-full top-[40%] gap-2 font-Montserrat">
+        <div
+          className="h-12 w-12 animate-spin rounded-full border-[6px] border-solid border-current border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"
+          role="status"
+        ></div>
+        <span className="text-[14px] font-mono w-max text-center">
+          Connecting to server.
+          <br />
+          Please wait...
+        </span>
+      </div>
+    </div>
+  );
+}
