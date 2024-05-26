@@ -71,7 +71,7 @@ function EditorPage() {
       socketRef.current.on("connect_error", (err) => handleErrors(err));
       socketRef.current.on("connect_failed", (err) => handleErrors(err));
 
-      socket.on("connect", () => {
+      socketRef.current.on("connect", () => {
         console.log("Connected to server");
         setShowLoader(false);
       });
